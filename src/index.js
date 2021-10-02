@@ -1,4 +1,5 @@
 import express from "express";
+import sequelize from "sequelize";
 import userRouter from "./route/users.js";
 import boardRouter from "./route/boards.js";
 
