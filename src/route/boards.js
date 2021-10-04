@@ -1,35 +1,53 @@
 import { Router } from "express";
 import _ from "lodash";
+import sequelize from "sequelize";
+import faker from "faker";
+
+const seq = new sequelize('express', 'root', '1234', {
+  host: 'localhost',
+  dialect: 'mysql',
+  // logging: false
+});
+
+const Board = seq.define("board", {
+  title: {
+    type: sequelize.STRING,
+    allowNull: false
+  },
+  content: {
+    type: sequelize.TEXT,
+    allowNull: true
+  }
+});
+
+const board_sync = async() => {
+  try {
+    await Board.sync({ force: true });
+    for(let i=0; i<100; i++) {
+      await Board.create({
+        title: faker.lorem.sentence(1),
+        content: faker.lorem.sentence(10)
+      });
+    }
+  } catch(err) {
+    console.log(err);
+  }
+};
+// board_sync();
 
 const boardRouter = Router();
 
-let boards = [{
-  id: 1,
-  title: "게시글 제목",
-  content: "게시글 내용입니다",
-  createDate: "2021-09-05",
-  updateDate: "2021-09-06"
-},{
-  id: 2,
-  title: "게시글 제목",
-  content: "게시글 내용입니다",
-  createDate: "2021-09-05",
-  updateDate: "2021-09-06"
-},{
-  id: 3,
-  title: "게시글 제목",
-  content: "게시글 내용입니다",
-  createDate: "2021-09-05",
-  updateDate: "2021-09-06"
-}];
+let boards = [];
 
 boardRouter.get("/", (req, res) => {
+  const boards = await Board.findAll();
   res.send({
     count: boards.length,
     boards
   });
 });
 
+// 게시글 조회
 boardRouter.get("/:id", (req, res) => {
   const findBoard = _.find(boards, { id: parseInt(req.params.id) });
   let msg;
@@ -57,7 +75,7 @@ boardRouter.post("/", (req, res) => {
 
   if(!check_board && createBoard.id && createBoard.title && createBoard.content && createBoard.createDate && createBoard.updateDate) {
     boards.push(createBoard);
-    result = `${createBoard.title} 게시글을 생성했습니다.`;
+    result = `${createBoard.id}번째 게시글을 생성했습니다.`;
   } else {
     result = '입력 요청값이 잘못되었습니다.';
   }
@@ -73,7 +91,7 @@ boardRouter.put("/:id", (req, res) => {
 
   if(find_board_idx !== -1) {
     boards[find_board_idx].title = req.body.title;
-    boards[find_board_idx].content = req.body.content;
+    // boards[find_board_idx].content = req.body.content;
     result = "성공적으로 수정되었습니다.";
     res.status(200).send({
       result
