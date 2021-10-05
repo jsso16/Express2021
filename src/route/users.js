@@ -1,77 +1,13 @@
 import { Router } from "express";
-import _ from "lodash";
-import sequelize from "sequelize";
-import faker from "faker";
-import bcrypt from "bcrypt";
-faker.locale = "ko";
+import db from "../models/index.js";
 
-const seq = new sequelize('express', 'root', '1234', {
-  host: 'localhost',
-  dialect: 'mysql',
-  // logging: false
-});
-
-const check_sequelize_auth = async() => {
-  try {
-    await seq.authenticate();
-    console.log("DB 연결 성공");
-  } catch(err) {
-    console.log("DB 연결 실패: ", err);
-  }
-};
-check_sequelize_auth();
-
-const User = seq.define("user", {
-  name: {
-    type: sequelize.STRING,
-    allowNull: false
-  },
-  age: {
-    type: sequelize.INTEGER,
-    allowNull: false
-  },
-  password: {
-    type: sequelize.STRING,
-    allowNull: false
-  }
-});
-
-const initDB = async() => {
-  await User.sync();
-}
-// initDB();
-
-const user_sync = async() => {
-  try {
-    await User.sync({ force: true });
-    for(let i=0; i<100; i++) {
-      const hashpwd = await bcrypt.hash("test1234", 10);
-      User.create({
-        name: faker.name.lastName() + faker.name.firstName(),
-        age: getRandomInt(15,50),
-        password: hashpwd
-      });
-    }
-  } catch(err) {
-    console.log(err);
-  }
-};
-// user_sync();
-
+const { User } = db;
 const userRouter = Router();
-
-const getRandomInt = (min, max) => {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min) + min);
-}
-
-let users = [];
 
 userRouter.get("/", async(req, res) => {
   try {
     let { name, age } = req.query;
-    const { Op } = sequelize;
+    const { Op } = db.sequelize;
     const findUserQuery = {
       attributes: ['name', 'age'],
     }
