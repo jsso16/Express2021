@@ -17,7 +17,7 @@ const user_sync = async() => {
     await User.sync({ force: true });
     for(let i=0; i<100; i++) {
       const hashpwd = await bcrypt.hash("test1234", 10);
-      User.create({
+      await User.create({
         name: faker.name.lastName() + faker.name.firstName(),
         age: getRandomInt(15,50),
         password: hashpwd
@@ -34,7 +34,8 @@ const board_sync = async() => {
     for(let i=0; i<100; i++) {
       await Board.create({
         title: faker.lorem.sentence(1),
-        content: faker.lorem.sentence(10)
+        content: faker.lorem.sentence(10),
+        userId: getRandomInt(1,1000)
       });
     }
   } catch(err) {
@@ -42,5 +43,5 @@ const board_sync = async() => {
   }
 };
 
-user_sync();
-board_sync();
+await user_sync();
+await board_sync();
