@@ -39,86 +39,132 @@ const boardRouter = Router();
 
 let boards = [];
 
-boardRouter.get("/", (req, res) => {
-  const boards = await Board.findAll();
-  res.send({
-    count: boards.length,
-    boards
+boardRouter.get("/", async(req, res) => {
+  try {
+    const boards = await Board.findAll();
+    res.send({
+      count: boards.length,
+      boards
   });
+  } catch(err) {
+    console.log(err);
+    res.status(500).send({
+      msg: "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+    })
+  }
 });
 
 // 게시글 조회
-boardRouter.get("/:id", (req, res) => {
-  const findBoard = _.find(boards, { id: parseInt(req.params.id) });
-  let msg;
-
-  if(findBoard) {
-    msg = "정상적으로 조회되었습니다.";
-    res.status(200).send({
-      msg,
-      findBoard
-    });
-  } else {
-    msg = "해당 아이디를 가진 게시글이 없습니다.";
-    res.status(400).send({
-      msg,
-      findBoard
-    });
+boardRouter.get("/:id", async(req, res) => {
+  try {
+    const findBoard = await Board.findOne({
+      where: {
+        id: req.params.id
+      }
+    })
+    let msg;
+    
+    if(findBoard) {
+      msg = "정상적으로 조회되었습니다.";
+      res.status(200).send({
+        msg,
+        findBoard
+      });
+    } else {
+      msg = "해당 아이디를 가진 게시글이 없습니다.";
+      res.status(400).send({
+        msg,
+        findBoard
+      });
+    }
+  } catch(err) {
+    console.log(err);
+    res.status(500).send({
+      msg: "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+    })
   }
 });
 
 // 게시글 생성
-boardRouter.post("/", (req, res) => {
-  const createBoard = req.body;
-  const check_board = _.find(boards, [ "id", createBoard.id ]);
-  let result;
+boardRouter.post("/", async(req, res) => {
+  try {
+    const { title, content } = req.body;
+    
+    if(!title) {
+      res.status(400).send({
+        msg: "입력 요청 값이 잘못되었습니다."
+      });
+    }
 
-  if(!check_board && createBoard.id && createBoard.title && createBoard.content && createBoard.createDate && createBoard.updateDate) {
-    boards.push(createBoard);
-    result = `${createBoard.id}번째 게시글을 생성했습니다.`;
-  } else {
-    result = '입력 요청값이 잘못되었습니다.';
+    const result = await Board.create({ 
+      title: title ? title : null, 
+      content: content ? content : null
+    });
+
+    res.status(201).send({
+      msg: `id ${result.id}, ${result.title} 게시글이 생성되었습니다.`
+    });
+  } catch(err) {
+    console.log(err);
+    res.status(500).send({
+      msg: "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+    });
   }
-  res.status(201).send({
-    result
-  });
 });
 
 // 게시글 변경
-boardRouter.put("/:id", (req, res) => {
-  const find_board_idx = _.findIndex(boards, [ "id", parseInt(req.params.id) ]);
-  let result;
-
-  if(find_board_idx !== -1) {
-    boards[find_board_idx].title = req.body.title;
-    // boards[find_board_idx].content = req.body.content;
-    result = "성공적으로 수정되었습니다.";
-    res.status(200).send({
-      result
+boardRouter.put("/:id", async(req, res) => {
+  try {
+    const { title , content } = req.body;
+    let board = await Board.findOne({
+      where: {
+        id: req.params.id
+      }
     });
-  } else {
-    result = `아이디가 ${req.params.id}인 게시글이 존재하지 않습니다.`;
-    res.status(400).send({
-      result
+
+    if(!board || (!title && !content)) {
+      res.status(400).send({ 
+        msg: '게시글이 존재하지 않거나 입력값이 잘못되었습니다.' 
+      });
+    }
+    if(title) board.title = title;
+    if(content) board.content = content;
+
+    await board.save();
+    res.status(200).send({
+      msg: '게시글이 정상적으로 수정되었습니다.'
+    });
+  } catch(error) {
+    console.log(err);
+    res.status(500).send({
+      msg: '서버에 문제가 발했습니다. 잠시 후 다시 시도해주세요.'
     });
   }
 });
 
 // 게시글 지우기
-boardRouter.delete("/:id", (req, res) => {
-  const check_board = _.find(boards, [ "id", parseInt(req.params.id) ]);
-  let result;
-
-  if(check_board) {
-    boards = _.reject(boards, ["id", parseInt(req.params.id)]);
-    result = "성공적으로 삭제되었습니다.";
-    res.status(200).send({
-      result
+boardRouter.delete("/:id", async(req, res) => {
+  try {
+    let board = await Board.findOne({
+      where: {
+        id: req.params.id
+      }
     });
-  } else {
-    result = `아이디가 ${req.params.id}인 게시글이 존재하지 않습니다.`;
-    res.status(400).send({
-      result
+
+    if(!board) {
+      res.status(400).send({ 
+        msg: '게시글이 존재하지 않습니다.' 
+      });
+    }
+
+    await board.destroy();
+    res.status(200).send({
+      msg: '게시글이 정상적으로 삭제되었습니다.'
+    });
+  } catch(error) {
+    console.log(err);
+    res.status(500).send({
+      msg: '서버에 문제가 발했습니다. 잠시 후 다시 시도해주세요.'
     });
   }
 });
