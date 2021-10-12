@@ -1,8 +1,8 @@
 import { Router } from "express";
+import bcrypt from "bcrypt";
 import db from "../models/index.js";
-import user from "../models/user.js";
 
-const { User } = db;
+const { User, Board, Permission } = db;
 const userRouter = Router();
 
 userRouter.get("/", async(req, res) => {
@@ -11,6 +11,7 @@ userRouter.get("/", async(req, res) => {
     const { Op } = db.sequelize;
     const findUserQuery = {
       attributes: ['id', 'name', 'age'],
+      include: [Permission]
     }
     let result;
 
@@ -36,47 +37,68 @@ userRouter.get("/", async(req, res) => {
 });
 
 // 유저 조회
-userRouter.get("/:id", (req, res) => {
-  const findUser = _.find(users, { id: parseInt(req.params.id) });
-  let msg;
+userRouter.get("/:id", async(req, res) => {
+  try {
+    const findUser = await User.findOne({
+      // include: [Permission, Board]
+      // 모든 컬럼을 조회할 경우
+      include: [{
+        model: Permission, 
+        attributes: ['id', 'title', 'level']
+      },{
+        model: Board, 
+        attributes: ['id', 'title']
+      }], // 컬럼을 필터해주거나 조건을 주고싶을 때 사용
+      where: {
+        id: req.params.id
+      }
+    });
+    let msg;
 
-  if(findUser) {
-    msg = "정상적으로 조회되었습니다.";
-    res.status(200).send({
-      msg,
-      findUser
-    });
-  } else {
-    msg = "해당 아이디를 가진 유저가 없습니다.";
-    res.status(400).send({
-      msg,
-      findUser
-    });
+    if(findUser) {
+      msg = "정상적으로 조회되었습니다.";
+      res.status(200).send({
+        msg,
+        findUser
+      });
+    } else {
+      msg = "해당 아이디를 가진 유저가 없습니다.";
+      res.status(400).send({
+        msg,
+        findUser
+      });
+    }
+  } catch(err) {
+    console.log(err);
+    res.status(500).send({
+      msg: "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+    })
   }
 });
 
 // 유저 생성
 userRouter.post("/", async(req, res) => {
   try {
-    const { name, age, permission } = req.body;
+    const { name, age, password, permission } = req.body;
     
-    if (!name || !age || !permission) {
+    if (!name || !age || !password || !permission) {
       res.status(400).send({
         msg: "입력 요청 값이 잘못되었습니다."
       });
+    } else {
+      const hashpwd = await bcrypt.hash(password, 4); // password hash 처리
+      //const result = await User.create({name: name, age: age});
+      const result = await User.create({ name, age, password: hashpwd });
+
+      await result.createPermission({
+        title: permission.title, 
+        level: permission.level 
+      });
+
+      res.status(201).send({
+        msg: `id ${result.id}, ${result.name} 유저가 생성되었습니다.`
+      });
     }
-
-    //const result = await User.create({name: name, age: age});
-    const result = await User.create({ name, age });
-
-    await result.createPermission({
-      title: permission.title, 
-      level: permission.level 
-    });
-
-    res.status(201).send({
-      msg: `id ${result.id}, ${result.name} 유저가 생성되었습니다.`
-    });
   } catch(err) {
     console.log(err);
     res.status(500).send({

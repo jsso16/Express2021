@@ -15,9 +15,7 @@ export default (sequelize, DataTypes) => {
     // Table 생성 시 createdAt, updatedAt이 자동으로 생성
   });
   Permission.associate = function(models) {
-    models.Permission.belongsTo(models.User, {
-      foreignKey: 'userIdKey'
-    });
+    models.Permission.hasOne(models.User);
   };
   return Permission; 
 };
