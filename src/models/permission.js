@@ -12,9 +12,12 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true
     }
+    // Table 생성 시 createdAt, updatedAt이 자동으로 생성
   });
   Permission.associate = function(models) {
-    models.Permission.hasOne(models.User);
+    models.Permission.belongsTo(models.User, {
+      foreignKey: 'userIdKey'
+    });
   };
   return Permission; 
 };

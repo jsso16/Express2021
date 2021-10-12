@@ -1,5 +1,6 @@
 import { Router } from "express";
 import db from "../models/index.js";
+import user from "../models/user.js";
 
 const { User } = db;
 const userRouter = Router();
@@ -9,7 +10,7 @@ userRouter.get("/", async(req, res) => {
     let { name, age } = req.query;
     const { Op } = db.sequelize;
     const findUserQuery = {
-      attributes: ['name', 'age'],
+      attributes: ['id', 'name', 'age'],
     }
     let result;
 
@@ -57,9 +58,9 @@ userRouter.get("/:id", (req, res) => {
 // 유저 생성
 userRouter.post("/", async(req, res) => {
   try {
-    const { name, age } = req.body;
+    const { name, age, permission } = req.body;
     
-    if (!name || !age) {
+    if (!name || !age || !permission) {
       res.status(400).send({
         msg: "입력 요청 값이 잘못되었습니다."
       });
@@ -67,6 +68,11 @@ userRouter.post("/", async(req, res) => {
 
     //const result = await User.create({name: name, age: age});
     const result = await User.create({ name, age });
+
+    await result.createPermission({
+      title: permission.title, 
+      level: permission.level 
+    });
 
     res.status(201).send({
       msg: `id ${result.id}, ${result.name} 유저가 생성되었습니다.`
@@ -137,7 +143,7 @@ userRouter.delete("/:id", async(req, res) => {
 
 userRouter.get("/test/:id", async(req, res) => {
   try {
-    const Op = sequelize.Op;
+    const Op = db.sequelize.Op;
     const userResult = await User.findAll({
       attributes: ['id', 'name', 'age', 'updatedAt'],
       where: {

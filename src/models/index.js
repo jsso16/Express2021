@@ -28,10 +28,11 @@ const db = {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-Object.keys(db)
+Object.keys(db) // ["User", "Board", "Permission"]
 .forEach((modelName) => {
-  if(db[modelName].associate) {
-    db[modelName].associate(db);
+  // modelName -> User, Board, Permission
+  if(db[modelName].associate) { // db.User.associate 또는 db["User"].assiciate
+    db[modelName].associate(db); // associate 안에 할당한 함수를 실행
   }
 });
 

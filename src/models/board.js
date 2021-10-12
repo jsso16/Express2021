@@ -1,11 +1,11 @@
 export default (sequelize, DataTypes) => {
   const Board = sequelize.define("board", {
     title: {
-      type: sequelize.STRING,
+      type: DataTypes.STRING,
       allowNull: false
     },
     content: {
-      type: sequelize.TEXT,
+      type: DataTypes.TEXT,
       allowNull: true
     }
   });
