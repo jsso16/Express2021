@@ -5,6 +5,13 @@ import db from "../models/index.js";
 const { User, Board, Permission } = db;
 const userRouter = Router();
 
+/***
+  * REST API
+  * C.R.U.D
+  * Create(POST), Read(GET), Update(PUT), Delete(DELETE)
+  * users router -> 유저 생성, 조회, 수정, 삭제
+***/
+// path = "/" => http://localhost:3000/users/ (GET)
 userRouter.get("/", async(req, res) => {
   try {
     let { name, age } = req.query;
@@ -37,6 +44,8 @@ userRouter.get("/", async(req, res) => {
 });
 
 // 유저 조회
+// path = "/:id" => http://localhost:3000/users/:id (GET)
+// http://localhost:3000/users/1 <- userId 값
 userRouter.get("/:id", async(req, res) => {
   try {
     const findUser = await User.findOne({
@@ -77,8 +86,10 @@ userRouter.get("/:id", async(req, res) => {
 });
 
 // 유저 생성
+// http://localhost:3000/users/ (POST)
 userRouter.post("/", async(req, res) => {
   try {
+    // get과 다르게 req.query가 아닌 req.body에서 값을 가지고 옴
     const { name, age, password, permission } = req.body;
     
     if (!name || !age || !password || !permission) {
@@ -108,6 +119,7 @@ userRouter.post("/", async(req, res) => {
 });
 
 // name 변경
+// http://localhost:3000/users/:id (PUT)
 userRouter.put("/:id", async(req, res) => {
   try {
     const { name, age } = req.body;
@@ -138,6 +150,7 @@ userRouter.put("/:id", async(req, res) => {
 });
 
 // user 지우기
+// http://localhost:3000/users/:id (DELETE)
 userRouter.delete("/:id", async(req, res) => {
   try {
     let user = await User.findOne({
